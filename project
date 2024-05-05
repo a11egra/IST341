@@ -202,5 +202,3 @@ IMS_best_d, IMS_best_ntrees, IMS_best_accuracy = RF_cross_validation(4, IMS_rfor
 SAH_best_d, SAH_best_ntrees, SAH_best_accuracy = RF_cross_validation(5, SAH_rforest_model, SAH_X_train, SAH_y_train, depth, trees)
 SCGH_best_d, SCGH_best_ntrees, SCGH_best_accuracy = RF_cross_validation(6, SCGH_rforest_model, SCGH_X_train, SCGH_y_train, depth, trees)
 SES_best_d, SES_best_ntrees, SES_best_accuracy = RF_cross_validation(7, SES_rforest_model, SES_X_train, SES_y_train, depth, trees)
-
-
