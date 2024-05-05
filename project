@@ -6,6 +6,8 @@ query = pd.read_csv('query.csv')
 query.info()
 query
 
+
+
 ### CLEANING
 # drop any weird rows with null values
 full_query = query.dropna(how='any',axis=0)  # drop any rows with null values
@@ -22,7 +24,6 @@ qIMS = full_query[full_query['Program 1 Category'] == 'IMS']
 qSAH = full_query[full_query['Program 1 Category'] == 'SAH']
 qSCGH = full_query[full_query['Program 1 Category'] == 'SCGH']
 qSES = full_query[full_query['Program 1 Category'] == 'SES']
-
 
 # drop the program category now that they're split
 ROW = 0
@@ -42,6 +43,8 @@ SAH_clean = clean_df(qSAH)
 SCGH_clean = clean_df(qSCGH) 
 SES_clean = clean_df(qSES)
 
+
+
 ### INDEXING
 # column index
 COLUMNS = query_clean.columns
@@ -55,6 +58,7 @@ TF = ['False','True']
 TF_INDEX = {'False':0,'True':1}
 for name in TF:
     print(f"{name} maps to {TF_INDEX[name]}")
+
 
 ## MAPPING
 def map_values(df, column_name, mapping):
@@ -81,6 +85,8 @@ for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type',
     SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
     SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
 
+
+
 ### NUMPY
 # i'm not going to keep the full query around anymore
 CISAT_arr = CISAT_clean.to_numpy()
@@ -91,6 +97,8 @@ IMS_arr = IMS_clean.to_numpy()
 SAH_arr = SAH_clean.to_numpy()
 SCGH_arr = SCGH_clean.to_numpy()
 SES_arr = SES_clean.to_numpy()
+
+
 
 ### DATA DEFINITIONS + TRAINING
 from sklearn.model_selection import train_test_split
@@ -126,6 +134,8 @@ SAH_list = [SAH_X_train, SAH_X_test, SAH_y_train, SAH_y_test]
 SCGH_list = [SCGH_X_train, SCGH_X_test, SCGH_y_train, SCGH_y_test]
 SES_list = [SES_X_train, SES_X_test, SES_y_train, SES_y_test]
 
+
+
 ### FIRST RF MODEL
 from sklearn import tree      # for decision trees
 from sklearn import ensemble  # for random forests, an ensemble classifier
@@ -149,6 +159,8 @@ IMS_rforest_model = RF_training([IMS_X_train, IMS_y_train])
 SAH_rforest_model = RF_training([SAH_X_train, SAH_y_train])
 SCGH_rforest_model = RF_training([SCGH_X_train, SCGH_y_train])
 SES_rforest_model = RF_training([SES_X_train, SES_y_train])
+
+
 
 ### CROSS-VALIDATION
 DIVISIONS = ['CISAT','DBOS','DPE','DSM','IMS','SAH','SCGH','SES']
@@ -202,3 +214,58 @@ IMS_best_d, IMS_best_ntrees, IMS_best_accuracy = RF_cross_validation(4, IMS_rfor
 SAH_best_d, SAH_best_ntrees, SAH_best_accuracy = RF_cross_validation(5, SAH_rforest_model, SAH_X_train, SAH_y_train, depth, trees)
 SCGH_best_d, SCGH_best_ntrees, SCGH_best_accuracy = RF_cross_validation(6, SCGH_rforest_model, SCGH_X_train, SCGH_y_train, depth, trees)
 SES_best_d, SES_best_ntrees, SES_best_accuracy = RF_cross_validation(7, SES_rforest_model, SES_X_train, SES_y_train, depth, trees)
+
+
+
+### TUNED MODEL
+CISAT_model = ensemble.RandomForestClassifier(max_depth=CISAT_best_d,n_estimators=CISAT_best_ntrees,max_samples=0.5)
+CISAT_model.fit(CISAT_X_all, CISAT_y_all) 
+print(f"Built an RF classifier for CISAT with depth={CISAT_best_d} and ntrees={CISAT_best_ntrees}")
+
+DBOS_model = ensemble.RandomForestClassifier(max_depth=DBOS_best_d,n_estimators=DBOS_best_ntrees,max_samples=0.5)
+DBOS_model.fit(DBOS_X_all, DBOS_y_all) 
+print(f"Built an RF classifier for DBOS with depth={DBOS_best_d} and ntrees={DBOS_best_ntrees}")
+
+DPE_model = ensemble.RandomForestClassifier(max_depth=DPE_best_d,n_estimators=DPE_best_ntrees,max_samples=0.5)
+DPE_model.fit(DPE_X_all, DPE_y_all)
+print(f"Built an RF classifier for DPE with depth={DPE_best_d} and ntrees={DPE_best_ntrees}")
+
+DSM_model = ensemble.RandomForestClassifier(max_depth=DSM_best_d,n_estimators=DSM_best_ntrees,max_samples=0.5)
+DSM_model.fit(DSM_X_all, DSM_y_all)
+print(f"Built an RF classifier for DSM with depth={DSM_best_d} and ntrees={DSM_best_ntrees}")
+
+IMS_model = ensemble.RandomForestClassifier(max_depth=IMS_best_d,n_estimators=IMS_best_ntrees,max_samples=0.5)
+IMS_model.fit(IMS_X_all, IMS_y_all)
+print(f"Built an RF classifier for IMS with depth={IMS_best_d} and ntrees={IMS_best_ntrees}")
+
+SAH_model = ensemble.RandomForestClassifier(max_depth=SAH_best_d,n_estimators=SAH_best_ntrees,max_samples=0.5)
+SAH_model.fit(SAH_X_all, SAH_y_all)
+print(f"Built an RF classifier for SAH with depth={SAH_best_d} and ntrees={SAH_best_ntrees}")
+
+SCGH_model = ensemble.RandomForestClassifier(max_depth=SCGH_best_d,n_estimators=SCGH_best_ntrees,max_samples=0.5)
+SCGH_model.fit(SCGH_X_all, SCGH_y_all)
+print(f"Built an RF classifier for SCGH with depth={SCGH_best_d} and ntrees={SCGH_best_ntrees}")
+
+SES_model = ensemble.RandomForestClassifier(max_depth=SES_best_d,n_estimators=SES_best_ntrees,max_samples=0.5)
+SES_model.fit(SES_X_all, SES_y_all)
+print(f"Built an RF classifier for SES with depth={SES_best_d} and ntrees={SES_best_ntrees}")
+
+
+
+### FEATURE IMPORTANCES
+IMP_LIST = [CISAT_model.feature_importances_,
+            DBOS_model.feature_importances_,
+            DPE_model.feature_importances_,
+            DSM_model.feature_importances_,
+            IMS_model.feature_importances_,
+            SAH_model.feature_importances_,
+            SCGH_model.feature_importances_,
+            SES_model.feature_importances_]
+
+j = 0
+for IMP in IMP_LIST:
+    print(f"\nFeature importances for {DIVISIONS[j]}:")
+    for i, importance in enumerate(IMP):
+        perc = importance * 100
+        print(f"  {COLUMNS[i+1]:>21s} has {perc:>5.1f}% of the decision-making importance.")
+    j += 1
