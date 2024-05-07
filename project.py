@@ -85,7 +85,11 @@ for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type',
     SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
     SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
 
-
+# add these to reference-able indexes
+CITIZENSHIP_INDEX = {v: k for k, v in mappings['Citizenship Status'].items()}
+CONTINENT_INDEX = {v: k for k, v in mappings['Continent'].items()}
+TYPE_INDEX = {v: k for k, v in mappings['Degree Type'].items()}
+SEMESTER_INDEX = {v: k for k, v in mappings['Entry Semester'].items()}
 
 ### NUMPY
 # i'm not going to keep the full query around anymore
@@ -294,3 +298,61 @@ for IMP in IMP_LIST:
 
     j+=1
     new_df = pd.DataFrame()
+
+
+
+### COUNTING
+
+# some handy lists to start
+clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]
+columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']
+indexes = [COUNTRY_INDEX, CITIZENSHIP_INDEX, CONTINENT_INDEX, TYPE_INDEX, SEMESTER_INDEX]
+DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
+
+from collections import Counter
+
+# define a function to find the top and bottom 3 most common features
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3] # top counts
+    bot = counts.most_common()[:-4:-1] # bottom counts
+
+    # define the range because apparently some values are < 3 and it freaked out
+    min_length = min(len(bot), len(top)) 
+
+    # make sure it's exporting with NAMES, not index values...
+    for i in range(min_length):
+        bot[i] = (index[bot[i][0]], bot[i][1])
+        top[i] = (index[top[i][0]], top[i][1])
+
+    # saving as a dataframe, because that's always a good move
+    top_df = pd.DataFrame(top, columns=['Feature', 'Count'])
+    bot_df = pd.DataFrame(bot, columns=['Feature', 'Count'])
+
+    # and let's export as a file while we're at it. why not
+    top_filename = f"top_{division}_{column}.csv"
+    bot_filename = f"bot_{division}_{column}.csv"
+    top_df.to_csv(top_filename, index=False)
+    bot_df.to_csv(bot_filename, index=False)
+
+    return top, bot
+
+# now do it for all the divisions!
+for df, division in zip(clean_list, DIVISIONS):
+    # double loop
+    for column, index in zip(columns,indexes):
+       # this is the important part
+        top, bot = find_counts(df, column, index, division)
+        top_name = f"top_{division}_{column}"
+        bot_name = f"bot_{division}_{column}"
+
+        # now we're just saving that as a variable
+        globals()[top_name] = top
+        globals()[bot_name] = bot
+
+        # sense check
+        print(f"{top_name} is {top}")
+        print(f"{bot_name} is {bot}")
+        print()
+
+  
