@@ -490,14 +490,56 @@ for IMP in IMP_LIST:
 
 >In this corrected code, `new_df` is created as an empty DataFrame at the beginning of each iteration, ensuring that it doesn't have any existing columns or data that could cause the "already exists" error.
 
-# Viewing an Index
+# Referencing Indexes
 Me:
->i have this: 
+>what am i doing wrong in my print statement? 
 
 ```python
-{'United States': 0, 'India': 1, 'Nigeria': 2, 'Ghana': 3, 'The Gambia': 4, 'Kenya': 5, 'Iran': 6, 'China': 7, 'Japan': 8, 'United Kingdom': 9, 'Zimbabwe': 10, 'Uganda': 11, 'Taiwan': 12, 'South Korea': 13, 'Bangladesh': 14, 'Pakistan': 15, 'Jamaica': 16, 'Philippines': 17, 'Saudi Arabia': 18, 'Colombia': 19, 'Eswatini': 20, 'Finland': 21, 'Saint Lucia': 22, 'Kuwait': 23, 'Turkey': 24, 'Hong Kong S.A.R.': 25, 'Romania': 26, 'Germany': 27, 'Burundi': 28, 'Australia': 29, 'United Arab Emirates': 30, 'Austria': 31, 'Russia': 32, 'Liberia': 33, 'Spain': 34, 'Malaysia': 35, 'South Africa': 36, 'Thailand': 37, 'Vietnam': 38, 'Israel': 39, 'Sweden': 40, 'Nepal': 41, 'Canada': 42, 'Italy': 43, 'Congo (Kinshasa)': 44, 'Uzbekistan': 45, 'Rwanda': 46, 'Singapore': 47, 'Jordan': 48, 'Indonesia': 49, 'Ireland': 50, 'Brazil': 51, 'Tanzania': 52, 'Sierra Leone': 53, 'Greece': 54, 'Cambodia': 55, 'Kyrgyzstan': 56, "Cote D'Ivoire": 57, 'Cameroon': 58, 'Sri Lanka': 59, 'Kazakhstan': 60, 'Egypt': 61, 'Ethiopia': 62}
+mappings = {}
+for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']:
+    mappings[column_name], _ = map_values(query_clean, column_name, mappings.get(column_name))
+    CISAT_clean[column_name] = CISAT_clean[column_name].map(mappings[column_name])
+    DBOS_clean[column_name] = DBOS_clean[column_name].map(mappings[column_name])
+    DPE_clean[column_name] = DPE_clean[column_name].map(mappings[column_name])
+    DSM_clean[column_name] = DSM_clean[column_name].map(mappings[column_name])
+    IMS_clean[column_name] = IMS_clean[column_name].map(mappings[column_name])
+    SAH_clean[column_name] = SAH_clean[column_name].map(mappings[column_name])
+    SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
+    SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
+
+# mapping degrees
+def degree_indexing(df):
+  DEG_INDEX = map_values(df, 'Degree 1',None)
+  print(f"the degree index is {DEG_INDEX}.")
+  return DEG_INDEX
+
+query_DEG_INDEX = degree_indexing(query_clean)
+CISAT_DEG_INDEX = degree_indexing(CISAT_clean)
+DBOS_DEG_INDEX = degree_indexing(DBOS_clean)
+DPE_DEG_INDEX = degree_indexing(DPE_clean)
+DSM_DEG_INDEX = degree_indexing(DSM_clean)
+IMS_DEG_INDEX = degree_indexing(IMS_clean)
+SAH_DEG_INDEX = degree_indexing(SAH_clean)
+SCGH_DEG_INDEX = degree_indexing(SCGH_clean)
+SES_DEG_INDEX = degree_indexing(SES_clean)
+```
+```python
+ print(mappings{'DBOS':'Country'})
+```
+ChatGPT:
+>The error in your print statement is a syntax error. You should use square brackets `[]` to access the value in the `mappings` dictionary, not curly braces `{}`. Additionally, you should use a comma `,` to separate the arguments in the `print` function. Here's the corrected print statement:
+
+```python
+print(mappings['DBOS']['Country'])
 ```
 
+>This assumes that `mappings` is a dictionary of dictionaries, where the keys are column names ('DBOS', etc.) and the values are dictionaries with keys like 'Country', 'Citizenship Status', etc. If `mappings` is structured differently, you'll need to adjust the key access accordingly.
+
+Me:
+>now i have this: 
+```python
+{'United States': 0, 'India': 1, 'Nigeria': 2, 'Ghana': 3, 'The Gambia': 4, 'Kenya': 5, 'Iran': 6, 'China': 7, 'Japan': 8, 'United Kingdom': 9, 'Zimbabwe': 10, 'Uganda': 11, 'Taiwan': 12, 'South Korea': 13, 'Bangladesh': 14, 'Pakistan': 15, 'Jamaica': 16, 'Philippines': 17, 'Saudi Arabia': 18, 'Colombia': 19, 'Eswatini': 20, 'Finland': 21, 'Saint Lucia': 22, 'Kuwait': 23, 'Turkey': 24, 'Hong Kong S.A.R.': 25, 'Romania': 26, 'Germany': 27, 'Burundi': 28, 'Australia': 29, 'United Arab Emirates': 30, 'Austria': 31, 'Russia': 32, 'Liberia': 33, 'Spain': 34, 'Malaysia': 35, 'South Africa': 36, 'Thailand': 37, 'Vietnam': 38, 'Israel': 39, 'Sweden': 40, 'Nepal': 41, 'Canada': 42, 'Italy': 43, 'Congo (Kinshasa)': 44, 'Uzbekistan': 45, 'Rwanda': 46, 'Singapore': 47, 'Jordan': 48, 'Indonesia': 49, 'Ireland': 50, 'Brazil': 51, 'Tanzania': 52, 'Sierra Leone': 53, 'Greece': 54, 'Cambodia': 55, 'Kyrgyzstan': 56, "Cote D'Ivoire": 57, 'Cameroon': 58, 'Sri Lanka': 59, 'Kazakhstan': 60, 'Egypt': 61, 'Ethiopia': 62}
+``` 
 >how do i input a number and get out the country?
 
 ChatGPT:
@@ -708,3 +750,182 @@ for column_name, mapping in index_mapping.items():
 ```
 
 >This code will populate the `index_mapping` dictionary with mappings for each column and allow you to refer to it later in your code.
+
+# Top/Bottom Values and Exporting
+
+Me:
+>how do i get the three least common values for bot? 
+
+```python
+from collections import Counter
+
+def find_counts(df, column, index, division):
+  counts = Counter(df[column])
+  top = counts.most_common(3)[0:3]
+  bot = counts.most_common(3)[:-1]
+  return top, bot
+  ```
+
+ChatGPT:
+>Your function `find_counts` looks almost correct. However, to get the three least common values, you need to adjust the `bot` variable. Here's the corrected version:
+
+```python
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    return top, bot
+```
+
+>In the `bot` line, `most_common()` returns all items in the counter in descending order of frequency, and `[:-4:-1]` selects the last three items, which are the least common values.
+
+Me:
+>what's wrong with the index? 
+
+```python
+from collections import Counter
+
+def find_counts(df, column, index, division):
+  counts = Counter(df[column])
+  top = counts.most_common(3)[0:3]
+  bot = counts.most_common()[:-4:-1]
+  for i in range(0,3):
+    bot[i][0] = index[bot[i][0]]
+  return top, bot
+
+top_CISAT, bot_CISAT = find_counts(CISAT_clean, 'Country', COUNTRY_INDEX, 'CISAT') 
+
+TypeError: 'tuple' object does not support item assignment
+```
+
+ChatGPT:
+>The error message `'tuple' object does not support item assignment` indicates that you're trying to modify a tuple, which is immutable. In your case, `bot` is a tuple because of the way you're using `most_common()[:-4:-1]`, which returns a tuple of (value, count) pairs.
+
+>To fix this, you can convert `bot` to a list before trying to modify it. Here's the updated function:
+
+```python
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    bot = list(bot)  # Convert to a list
+    for i in range(0, 3):
+        bot[i] = (index[bot[i][0]], bot[i][1])
+    return top, bot
+```
+
+>This change converts `bot` to a list before the loop where you're trying to modify it. It then correctly updates the first element of each tuple in `bot` with the corresponding value from `index`.
+
+Me:
+>can i add a suffix onto top and bot to allow me to name them `top_CISAT` if the division=CISAT? 
+```python
+for df, division in zip(clean_list, DIVISIONS):
+  for column in columns:
+    top, bot = find_counts(df, column, COUNTRY_INDEX, division)
+```
+
+ChatGPT:
+>You can modify your code to add a suffix to `top` and `bot` based on the `division` value. Here's how you can do it:
+
+```python
+for df, division in zip(clean_list, DIVISIONS):
+    for column in columns:
+        top, bot = find_counts(df, column, COUNTRY_INDEX, division)
+        top_name = f"top_{division}_{column}"
+        bot_name = f"bot_{division}_{column}"
+        globals()[top_name] = top
+        globals()[bot_name] = bot
+```
+
+>In this code, `top_name` and `bot_name` are created dynamically based on the `division` and `column` values. `globals()` is then used to create variables with these names and assign the `top` and `bot` values to them. This allows you to access these values later using the constructed variable names.
+
+Me:
+>why is the last value not getting translated? 
+
+```python
+from collections import Counter
+
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    for i in range(0, 2):
+        bot[i] = {index[bot[i][0]], bot[i][1]}
+        top[i] = {index[top[i][0]], top[i][1]}
+    return top, bot 
+
+result: [{'Finland', 1}, {1, 'Colombia'}, (17, 1)]
+```
+
+ChatGPT:
+>The issue in your code lies in the way you're trying to update `bot` and `top` values. You're using curly braces `{}` which create a set, but you should be using parentheses `()` to create a tuple. Here's the corrected version of your function:
+
+```python
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    for i in range(0, 3):
+        bot[i] = (index[bot[i][0]], bot[i][1])
+        top[i] = (index[top[i][0]], top[i][1])
+    return top, bot
+```
+
+>This change ensures that `bot` and `top` are updated with tuples instead of sets, which is the correct way to construct key-value pairs in this context.
+
+Me:
+>can i change the range function to decrease if there is not a third variable to use?
+
+ChatGPT:
+>Yes, you can change the range function to decrease dynamically based on the length of `bot` or `top`. Here's how you can modify your function to achieve this:
+
+```python
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    min_length = min(len(bot), len(top))
+    for i in range(min_length):
+        bot[i] = (index[bot[i][0]], bot[i][1])
+        top[i] = (index[top[i][0]], top[i][1])
+    return top, bot
+```
+
+>In this modification, `min_length` is calculated as the minimum of the lengths of `bot` and `top`. The `range` function then iterates up to `min_length`, ensuring that only existing elements are processed.
+
+Me: 
+>now i want to put this into a dataframe and export it into a csv in whatever format will be most useful for this situation
+
+ChatGPT:
+>To put the data into a DataFrame and export it to a CSV file, you can modify the function to return DataFrames instead of lists, and then use the `to_csv` method to export the DataFrame to a CSV file. Here's how you can do it:
+
+```python
+import pandas as pd
+from collections import Counter
+
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+    min_length = min(len(bot), len(top))
+    top_data = [(index[item[0]], item[1]) for item in top[:min_length]]
+    bot_data = [(index[item[0]], item[1]) for item in bot[:min_length]]
+    top_df = pd.DataFrame(top_data, columns=['Feature', 'Count'])
+    bot_df = pd.DataFrame(bot_data, columns=['Feature', 'Count'])
+    return top_df, bot_df
+
+# Example usage
+clean_list = [...]  # Your list of DataFrames
+DIVISIONS = [...]  # Your list of divisions
+COUNTRY_INDEX = {...}  # Your index dictionary
+
+for df, division in zip(clean_list, DIVISIONS):
+    for column in columns:
+        top_df, bot_df = find_counts(df, column, COUNTRY_INDEX, division)
+        top_filename = f"top_{division}_{column}.csv"
+        bot_filename = f"bot_{division}_{column}.csv"
+        top_df.to_csv(top_filename, index=False)
+        bot_df.to_csv(bot_filename, index=False)
+```
+
+>In this code, `top_df` and `bot_df` are created as DataFrames with columns 'Feature' and 'Count'. These DataFrames are then exported to CSV files using the `to_csv` method, with `index=False` to exclude the index from the output. You may need to adjust the exact column names and file naming conventions to fit your specific needs.
