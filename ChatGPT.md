@@ -489,3 +489,222 @@ for IMP in IMP_LIST:
 
 
 >In this corrected code, `new_df` is created as an empty DataFrame at the beginning of each iteration, ensuring that it doesn't have any existing columns or data that could cause the "already exists" error.
+
+# Viewing an Index
+Me:
+>i have this: 
+
+```python
+{'United States': 0, 'India': 1, 'Nigeria': 2, 'Ghana': 3, 'The Gambia': 4, 'Kenya': 5, 'Iran': 6, 'China': 7, 'Japan': 8, 'United Kingdom': 9, 'Zimbabwe': 10, 'Uganda': 11, 'Taiwan': 12, 'South Korea': 13, 'Bangladesh': 14, 'Pakistan': 15, 'Jamaica': 16, 'Philippines': 17, 'Saudi Arabia': 18, 'Colombia': 19, 'Eswatini': 20, 'Finland': 21, 'Saint Lucia': 22, 'Kuwait': 23, 'Turkey': 24, 'Hong Kong S.A.R.': 25, 'Romania': 26, 'Germany': 27, 'Burundi': 28, 'Australia': 29, 'United Arab Emirates': 30, 'Austria': 31, 'Russia': 32, 'Liberia': 33, 'Spain': 34, 'Malaysia': 35, 'South Africa': 36, 'Thailand': 37, 'Vietnam': 38, 'Israel': 39, 'Sweden': 40, 'Nepal': 41, 'Canada': 42, 'Italy': 43, 'Congo (Kinshasa)': 44, 'Uzbekistan': 45, 'Rwanda': 46, 'Singapore': 47, 'Jordan': 48, 'Indonesia': 49, 'Ireland': 50, 'Brazil': 51, 'Tanzania': 52, 'Sierra Leone': 53, 'Greece': 54, 'Cambodia': 55, 'Kyrgyzstan': 56, "Cote D'Ivoire": 57, 'Cameroon': 58, 'Sri Lanka': 59, 'Kazakhstan': 60, 'Egypt': 61, 'Ethiopia': 62}
+```
+
+>how do i input a number and get out the country?
+
+ChatGPT:
+>To get the country corresponding to a number in your mappings dictionary, you can reverse the dictionary mapping. Here's how you can do it:
+
+```python
+# Assuming your mappings dictionary is named country_mappings
+country_mappings = {'United States': 0, 'India': 1, 'Nigeria': 2, ...}
+
+# Reverse the dictionary to map numbers to countries
+number_to_country = {v: k for k, v in country_mappings.items()}
+
+# Input a number
+number = 3
+
+# Get the country for the input number
+country = number_to_country.get(number)
+
+# Print the result
+print(country)
+```
+
+>This code will print the country corresponding to the input number. If the number does not exist in the dictionary, `None` will be returned.
+
+# Counter and Mapping
+
+Me:
+>in these dataframes: `clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]`, i want to find the most common reoccurring values in these columns: `columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']`, and then store the data with the division: `DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']`, count, and country translated back to a name using my mapping function 
+
+```python
+def map_values(df, column_name, mapping):
+    if mapping is None:
+        unique_values = df[column_name].unique()
+        mapping = {value: idx for idx, value in enumerate(unique_values)}
+    index_mapping = {idx: value for value, idx in mapping.items()}
+    df[column_name] = df[column_name].map(mapping)
+    return mapping, index_mapping
+
+# Create mappings for the first dataframe
+mappings = {}
+for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']:
+    mappings[column_name], _ = map_values(query_clean, column_name, mappings.get(column_name))
+    print(mappings[column_name])
+    CISAT_clean[column_name] = CISAT_clean[column_name].map(mappings[column_name])
+    DBOS_clean[column_name] = DBOS_clean[column_name].map(mappings[column_name])
+    DPE_clean[column_name] = DPE_clean[column_name].map(mappings[column_name])
+    DSM_clean[column_name] = DSM_clean[column_name].map(mappings[column_name])
+    IMS_clean[column_name] = IMS_clean[column_name].map(mappings[column_name])
+    SAH_clean[column_name] = SAH_clean[column_name].map(mappings[column_name])
+    SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
+    SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
+```
+
+ChatGPT:
+>To find the most common reoccurring values in the specified columns for each division and store the data with division, count, and country translated back to a name, you can use the following code:
+
+```python
+from collections import Counter
+
+# Define your list of dataframes and columns
+clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]
+columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']
+DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
+
+# Initialize a dictionary to store the results
+results = {}
+
+# Loop through each dataframe and division
+for df, division in zip(clean_list, DIVISIONS):
+    division_results = {}
+    for column_name in columns:
+        # Count the occurrences of each value in the column
+        counts = Counter(df[column_name])
+        # Get the most common value and its count
+        most_common_value, most_common_count = counts.most_common(1)[0]
+        # Translate the country value back to a name using the index_mapping
+        most_common_country = index_mapping[most_common_value]
+        # Store the results for this column
+        division_results[column_name] = {
+            'Most Common Value': most_common_value,
+            'Most Common Count': most_common_count,
+            'Most Common Country': most_common_country
+        }
+    # Store the results for this division
+    results[division] = division_results
+
+# Print the results
+for division, division_results in results.items():
+    print(f"Division: {division}")
+    for column_name, values in division_results.items():
+        print(f"{column_name}: {values}")
+    print()
+```
+
+>This code will print the most common reoccurring values for each specified column in each division, along with their counts and the translated country name.
+
+
+Me:
+>index_mapping is not defined. what would i put there?
+
+ChatGPT:
+>The `index_mapping` variable is the dictionary that maps the index values back to the original country names. Since you have defined the `map_values` function that creates this mapping, you can use the mappings generated during the mapping process. Here's how you can modify the code to include the `index_mapping`:
+
+```python
+from collections import Counter
+
+# Define your list of dataframes and columns
+clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]
+columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']
+DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
+
+# Initialize a dictionary to store the results
+results = {}
+
+# Initialize an empty index_mapping dictionary
+index_mapping = {}
+
+# Loop through each dataframe and division
+for df, division in zip(clean_list, DIVISIONS):
+    division_results = {}
+    for column_name in columns:
+        # Count the occurrences of each value in the column
+        counts = Counter(df[column_name])
+        # Get the most common value and its count
+        most_common_value, most_common_count = counts.most_common(1)[0]
+        # Translate the country value back to a name using the index_mapping
+        most_common_country = index_mapping.get(column_name, {}).get(most_common_value, most_common_value)
+        # Store the results for this column
+        division_results[column_name] = {
+            'Most Common Value': most_common_value,
+            'Most Common Count': most_common_count,
+            'Most Common Country': most_common_country
+        }
+    # Store the results for this division
+    results[division] = division_results
+
+# Print the results
+for division, division_results in results.items():
+    print(f"Division: {division}")
+    for column_name, values in division_results.items():
+        print(f"{column_name}: {values}")
+    print()
+```
+
+This code assumes that `index_mapping` is a dictionary that maps column names to dictionaries, where each inner dictionary maps index values to country names. For example:
+
+```python
+index_mapping = {
+    'Country': {0: 'USA', 1: 'Canada', 2: 'UK', ...},
+    'Citizenship Status': {0: 'Citizen', 1: 'Permanent Resident', ...},
+    ...
+}
+```
+
+You would populate this `index_mapping` dictionary during the initial mapping process using your `map_values` function.
+
+Me:
+>given my mapping function, how would i create and refer to this dictionary? 
+
+```python
+def map_values(df, column_name, mapping):
+    if mapping is None:
+        unique_values = df[column_name].unique()
+        mapping = {value: idx for idx, value in enumerate(unique_values)}
+    index_mapping = {idx: value for value, idx in mapping.items()}
+    df[column_name] = df[column_name].map(mapping)
+    return mapping, index_mapping
+
+# Create mappings for the first dataframe
+mappings = {}
+for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']:
+    mappings[column_name], _ = map_values(query_clean, column_name, mappings.get(column_name))
+    print(mappings[column_name])
+    CISAT_clean[column_name] = CISAT_clean[column_name].map(mappings[column_name])
+    DBOS_clean[column_name] = DBOS_clean[column_name].map(mappings[column_name])
+    DPE_clean[column_name] = DPE_clean[column_name].map(mappings[column_name])
+    DSM_clean[column_name] = DSM_clean[column_name].map(mappings[column_name])
+    IMS_clean[column_name] = IMS_clean[column_name].map(mappings[column_name])
+    SAH_clean[column_name] = SAH_clean[column_name].map(mappings[column_name])
+    SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
+    SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
+  ```
+
+  ChatGPT:
+>To create and refer to the `index_mapping` dictionary using your mapping function, you can modify your code as follows:
+
+```python
+# Initialize an empty index_mapping dictionary
+index_mapping = {}
+
+# Create mappings for the first dataframe
+mappings = {}
+for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']:
+    mappings[column_name], index_mapping[column_name] = map_values(query_clean, column_name, mappings.get(column_name))
+    print(mappings[column_name])
+    CISAT_clean[column_name] = CISAT_clean[column_name].map(mappings[column_name])
+    DBOS_clean[column_name] = DBOS_clean[column_name].map(mappings[column_name])
+    DPE_clean[column_name] = DPE_clean[column_name].map(mappings[column_name])
+    DSM_clean[column_name] = DSM_clean[column_name].map(mappings[column_name])
+    IMS_clean[column_name] = IMS_clean[column_name].map(mappings[column_name])
+    SAH_clean[column_name] = SAH_clean[column_name].map(mappings[column_name])
+    SCGH_clean[column_name] = SCGH_clean[column_name].map(mappings[column_name])
+    SES_clean[column_name] = SES_clean[column_name].map(mappings[column_name])
+
+# Now you can refer to the index_mapping dictionary
+for column_name, mapping in index_mapping.items():
+    print(f"Index mapping for {column_name}: {mapping}")
+```
+
+>This code will populate the `index_mapping` dictionary with mappings for each column and allow you to refer to it later in your code.
