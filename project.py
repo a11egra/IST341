@@ -269,3 +269,28 @@ for IMP in IMP_LIST:
         perc = importance * 100
         print(f"  {COLUMNS[i+1]:>21s} has {perc:>5.1f}% of the decision-making importance.")
     j += 1
+
+DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
+new_list = []
+
+for item in DIVISIONS:
+  new_var = item + "_features"
+  new_list.append(new_var)
+
+print(new_list)
+
+j = 0
+for IMP in IMP_LIST: 
+    print(f"\n{new_list[j]}") # sense check
+
+    new_df = pd.DataFrame(columns=['Feature Index #', 'Feature', 'Importance %']) # create an empty DataFrame
+
+    for i, importance in enumerate(IMP): # construct the new dataframe
+        new_df.loc[len(new_df)] = [i+1, COLUMNS[i+1], importance*100]
+
+    new_df.to_csv(f'{DIVISIONS[j]}.csv', index=False) # export
+    new_list[j] = new_df # store as a variable
+    print(new_list[j])
+
+    j+=1
+    new_df = pd.DataFrame()
