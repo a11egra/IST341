@@ -1,4 +1,6 @@
-# Splitting Programs into Separate Files
+# References
+## ChatGPT Conversations
+### Splitting Programs into Separate Files
 me
 >what's wrong here? full_query is a pandas dataframe: 
 
@@ -68,7 +70,7 @@ qSAH = full_query[full_query['Program 1 Category'] == 'SAH']
 >The result is assigned to `qSAH`, which becomes a new DataFrame containing only the rows where 'Program 1 Category'  is 'SAH'.
 
 
-# Index Mapping & Looping
+### Index Mapping & Looping
 
 me
 >i have created an indexing definition, but i now want to apply this to other dataframes (without re-creating the index). how can i do that?
@@ -127,7 +129,7 @@ print(TERM_INDEX)
 
 >In this modified function, the mapping argument is optional. If provided, it will be used for mapping values; otherwise, a new mapping will be created based on the unique values in the dataframe column. This allows you to reuse the same mapping for different dataframes.
 
-# Exporting Feature Importances
+### Exporting Feature Importances
 
 Me: 
 
@@ -490,7 +492,7 @@ for IMP in IMP_LIST:
 
 >In this corrected code, `new_df` is created as an empty DataFrame at the beginning of each iteration, ensuring that it doesn't have any existing columns or data that could cause the "already exists" error.
 
-# Referencing Indexes
+### Referencing Indexes
 Me:
 >what am i doing wrong in my print statement? 
 
@@ -564,7 +566,7 @@ print(country)
 
 >This code will print the country corresponding to the input number. If the number does not exist in the dictionary, `None` will be returned.
 
-# Counter and Mapping
+### Counter and Mapping
 
 Me:
 >in these dataframes: `clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]`, i want to find the most common reoccurring values in these columns: `columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']`, and then store the data with the division: `DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']`, count, and country translated back to a name using my mapping function 
@@ -751,7 +753,7 @@ for column_name, mapping in index_mapping.items():
 
 >This code will populate the `index_mapping` dictionary with mappings for each column and allow you to refer to it later in your code.
 
-# Top/Bottom Values and Exporting
+### Top/Bottom Values and Exporting
 
 Me:
 >how do i get the three least common values for bot? 
@@ -914,10 +916,7 @@ def find_counts(df, column, index, division):
     bot_df = pd.DataFrame(bot_data, columns=['Feature', 'Count'])
     return top_df, bot_df
 
-# Example usage
-clean_list = [...]  # Your list of DataFrames
-DIVISIONS = [...]  # Your list of divisions
-COUNTRY_INDEX = {...}  # Your index dictionary
+
 
 for df, division in zip(clean_list, DIVISIONS):
     for column in columns:
@@ -929,3 +928,297 @@ for df, division in zip(clean_list, DIVISIONS):
 ```
 
 >In this code, `top_df` and `bot_df` are created as DataFrames with columns 'Feature' and 'Count'. These DataFrames are then exported to CSV files using the `to_csv` method, with `index=False` to exclude the index from the output. You may need to adjust the exact column names and file naming conventions to fit your specific needs.
+
+### Create Full Feature DataFrame
+Me:
+>i need to get the top 3 and bottom 3 into the correct columns in my new dataframe. how do i do that? from collections import Counter
+
+```python
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+
+    top = counts.most_common(3)[0:3]
+    bot = counts.most_common()[:-4:-1]
+
+    min_length = min(len(bot), len(top))
+    for i in range(min_length):
+        bot[i] = (index[bot[i][0]], bot[i][1])
+        top[i] = (index[top[i][0]], top[i][1])
+
+    top_df = pd.DataFrame(top, columns=['Feature', 'Count'])
+    bot_df = pd.DataFrame(bot, columns=['Feature', 'Count'])
+    top_filename = f"top_{division}_{column}.csv"
+    bot_filename = f"bot_{division}_{column}.csv"
+    top_df.to_csv(top_filename, index=False)
+    bot_df.to_csv(bot_filename, index=False)
+
+    return top, bot
+
+top_CISAT, bot_CISAT = find_counts(CISAT_clean, 'Country', COUNTRY_INDEX, 'CISAT')
+j = 0
+for IMP in IMP_LIST:
+    print(f"\n{new_list[j]}") # sense check
+
+    new_df = pd.DataFrame(columns=['Feature Index #', 'Feature', 'Importance', 
+                                   'Top 1', 'Top Count 1',
+                                   'Top 2', 'Top Count 2',
+                                   'Top 3', 'Top Count 3',
+                                   'Bottom 1', 'Bottom Count 1',
+                                   'Bottom 2', 'Bottom Count 2',
+                                   'Bottom 3', 'Bottom Count 3']) # create an empty DataFrame
+
+    for i, importance in enumerate(IMP): # construct the new dataframe
+        new_df.loc[len(new_df)] = [i+1,COLUMNS[i+1], importance]
+
+    for df, division in zip(clean_list, DIVISIONS):
+      for column, index in zip(columns,indexes):
+          top, bot = find_counts(df, column, index, division)
+
+      
+    new_df.to_csv(f'{DIVISIONS[j]}_features.csv', index=False) # export
+    new_list[j] = new_df # store as a variable
+    print(new_list[j])
+
+    j+=1
+    new_df = pd.DataFrame()
+```
+
+ChatGPT:
+>It looks like you're trying to get the top 3 and bottom 3 counts for each feature in your DataFrame. However, there are a few things to note in your code:
+1. In the `find_counts` function, you're returning the top and bottom counts, but you're not actually adding these counts to your new DataFrame.
+2. You're creating a new DataFrame (`new_df`) inside the loop, but you're not appending the top and bottom counts to it.
+
+>Here's an updated version of your code that should address these issues:
+
+```python
+from collections import Counter
+import pandas as pd
+
+def find_counts(df, column, index, division):
+    counts = Counter(df[column])
+
+    top = counts.most_common(3)
+    bot = counts.most_common()[:-4:-1]
+
+    min_length = min(len(bot), len(top))
+    top_data = [(index[item[0]], item[0], item[1]) for item in top]
+    bot_data = [(index[item[0]], item[0], item[1]) for item in bot]
+
+    return top_data, bot_data
+
+for j, IMP in enumerate(IMP_LIST):
+    new_df = pd.DataFrame(columns=['Feature Index #', 'Feature', 'Importance', 
+                                   'Top 1', 'Top Count 1',
+                                   'Top 2', 'Top Count 2',
+                                   'Top 3', 'Top Count 3',
+                                   'Bottom 1', 'Bottom Count 1',
+                                   'Bottom 2', 'Bottom Count 2',
+                                   'Bottom 3', 'Bottom Count 3']) # create an empty DataFrame
+
+    for i, importance in enumerate(IMP): # construct the new dataframe
+        new_df.loc[len(new_df)] = [i+1, COLUMNS[i+1], importance, None, None, None, None, None, None, None, None, None, None, None, None]
+
+    for df, division in zip(clean_list, DIVISIONS):
+        for column, index in zip(columns, indexes):
+            top, bot = find_counts(df, column, index, division)
+            for i, (index, feature, count) in enumerate(top):
+                new_df.at[i, f'Top {i+1}'] = feature
+                new_df.at[i, f'Top Count {i+1}'] = count
+            for i, (index, feature, count) in enumerate(bot):
+                new_df.at[i, f'Bottom {i+1}'] = feature
+                new_df.at[i, f'Bottom Count {i+1}'] = count
+
+    new_df.to_csv(f'{DIVISIONS[j]}_features.csv', index=False) # export
+    new_list[j] = new_df # store as a variable
+    print(new_list[j])
+```
+
+>This code should populate the `new_df` DataFrame with the top and bottom features and their counts for each division, and then export it to a CSV file. Please adjust it further according to your exact requirements and DataFrame structures.
+
+### What's a Dictionary again?
+Me:
+>how would i reference the values 'ghana' and '83' if i wanted to print them each separately? `[('Ghana', 83), ('India', 73), ('United States', 63)]`
+
+ChatGPT:
+>To reference the values 'Ghana' and '83' separately from the tuple ('Ghana', 83), you can use indexing. In Python, you can access elements in a tuple using square brackets `[]` with the index of the element you want. Since the tuple has two elements, 'Ghana' and 83, the index 0 refers to 'Ghana', and the index 1 refers to 83. Here's how you can print them separately:
+
+```python
+data = [('Ghana', 83), ('India', 73), ('United States', 63)]
+
+# Accessing the first tuple and its elements
+country_1 = data[0][0]  # 'Ghana'
+count_1 = data[0][1]    # 83
+
+# Printing the values separately
+print(country_1)  # Output: Ghana
+print(count_1)    # Output: 83
+```
+
+>You can do the same for other tuples in the list by changing the index in `data[index]`.
+
+
+### DataFrame for Counts
+
+Me:
+>if top is a dictionary containing `[('Value1', Count1), ('Value2', Count2), ('Value3', Count3)]` how would i get this to populate my dataframe?
+
+```python
+count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value','Count'])
+for division in DIVISIONS:
+  for column, index in zip(clean_list, columns, indexes):
+    top = find_counts(division, column, index)
+    for i in top.items():
+        count_df.loc[len(count_df)] = [DIVISIONS[division], COLUMNS[column], top[i][0], top[i][1]]
+```
+
+ChatGPT:
+>Your code snippet has a few issues. Here's a corrected version:
+
+```python
+count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+for division in DIVISIONS:
+    for column, index in zip(clean_list, columns):
+        top = find_counts(division, column, index)
+        for value, count in top:
+            count_df.loc[len(count_df)] = [DIVISIONS[division], COLUMNS[column], value, count]
+```
+
+>This corrected version does the following:
+- Loops over each `division` in `DIVISIONS`.
+- Loops over each `column` and `index` in `clean_list` and `columns` respectively.
+- Calls `find_counts(division, column, index)` to get the `top` dictionary.
+- Loops over each `value` and `count` pair in the `top` dictionary.
+- Adds a new row to `count_df` for each `value` and `count` pair, with the corresponding division, column, value, and count.
+
+>Make sure that `find_counts(division, column, index)` returns a dictionary with the desired structure, and that `DIVISIONS` and `COLUMNS` are defined appropriately in your code.
+
+Me:
+>User
+add an if statement so that top contains only 2 values if there are less than 3 possible values for it to count from collections import Counter
+
+```python
+def find_counts(df, column, index):
+    counts = Counter(df[column])
+
+    top = counts.most_common(3)
+
+    top_data=[]
+
+    top_data = {index[item[0]]:item[1] for item in top}
+
+    return top_data
+```
+
+ChatGPT:
+>You can add an if statement to check the length of `counts.most_common()` and limit `top` to contain only 2 values if there are less than 3 possible values. Here's the modified function:
+
+```python
+from collections import Counter
+
+def find_counts(df, column, index):
+    counts = Counter(df[column])
+    
+    if len(counts) < 3:
+        top = counts.most_common(len(counts))
+    else:
+        top = counts.most_common(3)
+
+    top_data = {index[item[0]]:item[1] for item in top}
+
+    return top_data
+```
+
+>Now, `top` will contain only 2 values if there are less than 3 possible values in the `counts` Counter object.
+
+### Add a New Row to Count DataFrame
+Me:
+>how do i complete this final line correctly? from collections import Counter
+
+```python
+def find_counts(df, column, index):
+    counts = Counter(df[column])
+
+    if len(counts) < 3:
+        top = counts.most_common(2) + None
+    else:
+        top = counts.most_common(3)
+
+    top_data = {index[item[0]]:item[1] for item in top}
+
+    return top_data count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+for division,df in zip(DIVISIONS,clean_list):
+    for column, index in zip(columns, indexes):
+        top = find_counts(df, column, index)
+        for value, count in top.items():
+            count_df.loc[count_df.shape[0]] = [DIVISIONS[division], COLUMNS[column], value, count]
+```
+
+ChatGPT:
+>It looks like you're trying to create a DataFrame `count_df` to store the top counts for each column in your DataFrames. The final line of your code snippet seems to be an attempt to add a row to `count_df` for each top count. However, there is a small mistake in the way you're trying to add the row. You should use `count_df.loc[len(count_df)]` instead of `count_df.loc[count_df.shape[0]]` to add a new row. Here's the corrected final line:
+
+```python
+count_df.loc[len(count_df)] = [DIVISIONS[division], COLUMNS[column], value, count]
+```
+
+>This will add a new row to `count_df` with the specified values for 'Division', 'Feature', 'Value', and 'Count'.
+
+Me:
+>i am getting this error `AttributeError: 'DataFrame' object has no attribute 'append'` on this line `count_df = count_df.append(dictionary, ignore_index=True)` of this code: 
+
+```python
+def count_df(df,division):
+    count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+    for column, index in zip(columns, indexes):
+        top = find_counts(df, column, index)
+        for item in top.items():
+          dictionary = {'Division':division, 'Feature': column, 'Value': item[0], 'Count': item[1]}
+          count_df = count_df.append(dictionary, ignore_index=True)
+    return count_df
+
+for df, division in zip(clean_list,DIVISIONS):
+    count_df(df, division)
+```
+
+ChatGPT:
+>The error message "AttributeError: 'DataFrame' object has no attribute 'append'" suggests that the `count_df` variable might not be a DataFrame when the `append` method is called on it. This could happen if the `find_counts` function returns an empty result, so `top` ends up being an empty dictionary.
+
+>To fix this, you can check if `top` is empty before attempting to append to `count_df`. Here's the modified code:
+
+```python
+def count_df(df, division):
+    count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+    for column, index in zip(columns, indexes):
+        top = find_counts(df, column, index)
+        if top:  # Check if top is not empty
+            for item in top.items():
+                dictionary = {'Division': division, 'Feature': column, 'Value': item[0], 'Count': item[1]}
+                count_df = count_df.append(dictionary, ignore_index=True)
+    return count_df
+
+for df, division in zip(clean_list, DIVISIONS):
+    count_df(df, division)
+```
+
+>This modification ensures that `dictionary` is only appended to `count_df` when `top` is not empty, which should prevent the `AttributeError` from occurring.
+
+Me:
+>can i use something other than append? can i use count_df.loc? how would i do this? 
+
+ChatGPT:
+>Yes, you can use a different approach to avoid using append and make the code more efficient. Instead of appending rows to the DataFrame in each iteration of the loop, you can directly assign values to the DataFrame using `.loc` without creating a dictionary. Here's how you can modify your function:
+
+```python
+def count_df(df, division):
+    count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+    for column, index in zip(columns, indexes):
+        top = find_counts(df, column, index)
+        if top:  # Check if top is not empty
+            for item in top.items():
+                count_df.loc[len(count_df)] = [division, column, item[0], item[1]]  # Assign values directly to DataFrame
+    return count_df
+
+for df, division in zip(clean_list, DIVISIONS):
+    count_df(df, division)
+```
+
+In this modified version, `count_df.loc[len(count_df)]` is used to add a new row to the DataFrame `count_df`, and the values `[division, column, item[0], item[1]]` are directly assigned to the columns of the new row.
