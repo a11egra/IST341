@@ -342,4 +342,58 @@ def count_df(df,division):
 for df, division in zip(clean_list,DIVISIONS):
     count_df(df, division)
 
-  
+
+
+### VISUALIZING
+import matplotlib.pyplot as plt
+
+CISAT_features = pd.read_csv('CISAT_features.csv')
+CISAT_counts = pd.read_csv('CISAT_counts.csv')
+
+DBOS_features = pd.read_csv('DBOS_features.csv')
+DBOS_counts = pd.read_csv('DBOS_counts.csv')
+
+DPE_features = pd.read_csv('DPE_features.csv')
+DPE_counts = pd.read_csv('DPE_counts.csv')
+
+DSM_features = pd.read_csv('DSM_features.csv')
+DSM_counts = pd.read_csv('DSM_counts.csv')
+
+IMS_features = pd.read_csv('IMS_features.csv')
+IMS_counts = pd.read_csv('IMS_counts.csv')
+
+SCGH_features = pd.read_csv('SCGH_features.csv')
+SCGH_counts = pd.read_csv('SCGH_counts.csv')
+
+SES_features = pd.read_csv('SES_features.csv')
+SES_counts = pd.read_csv('SES_counts.csv')
+
+feature_list = [CISAT_features, DBOS_features, DPE_features, DSM_features, IMS_features, SCGH_features, SES_features]
+count_list = [CISAT_counts, DBOS_counts, DPE_counts, DSM_counts, IMS_counts, SCGH_counts, SES_counts]
+
+# I didn't end up analyzing Degree 1 for this visual
+for df in feature_list:
+    df.drop(df[df['Feature'] == 'Degree 1'].index, inplace=True) 
+
+feature_index=CISAT_features['Feature']
+
+CISAT=dict(zip(CISAT_features['Feature'],CISAT_features['Importance %']))
+DBOS=dict(zip(DBOS_features['Feature'],DBOS_features['Importance %']))
+DPE=dict(zip(DPE_features['Feature'],DPE_features['Importance %']))
+DSM=dict(zip(DSM_features['Feature'],DSM_features['Importance %']))
+IMS=dict(zip(IMS_features['Feature'],IMS_features['Importance %']))
+SCGH=dict(zip(SCGH_features['Feature'],SCGH_features['Importance %']))
+SES=dict(zip(SES_features['Feature'],SES_features['Importance %']))
+
+featureplot = pd.DataFrame({'CISAT': CISAT, 'DBOS':DBOS, 'DPE':DPE, 'DSM':DSM,
+                      'IMS':IMS, 'SCGH':SCGH, 'SES':SES}, index=feature_index)
+
+colordef = plt.cm.rainbow(np.linspace(0, 1, 7))
+
+featureplot.plot.bar(figsize=(16, 6),color=colordef ,width=0.8)
+
+plt.title("Feature Importances")
+plt.legend(title="Divisions")
+plt.ylabel("Importance %")
+plt.savefig('feature_importances.png',bbox_inches='tight')
+plt.show()
