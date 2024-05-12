@@ -1,6 +1,18 @@
 import numpy as np
 import pandas as pd
 
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+from sklearn import ensemble
+from sklearn.model_selection import KFold
+from sklearn.metrics import accuracy_score
+
+from collections import Counter
+
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+     
+
 # import query file query.csv
 query = pd.read_csv('query.csv')
 query.info()
@@ -30,8 +42,7 @@ ROW = 0
 COLUMN = 1
 
 def clean_df (df):
-  cleaned_df = df.drop('Program 1 Category', axis=COLUMN)
-  return cleaned_df
+  return df.drop(['Program 1 Category', 'Degree 1'], axis=COLUMN)
 
 query_clean = clean_df(full_query)
 CISAT_clean = clean_df(qCISAT)
@@ -40,10 +51,8 @@ DPE_clean = clean_df(qDPE)
 DSM_clean = clean_df(qDSM)
 IMS_clean = clean_df(qIMS)
 SAH_clean = clean_df(qSAH)
-SCGH_clean = clean_df(qSCGH) 
+SCGH_clean = clean_df(qSCGH)
 SES_clean = clean_df(qSES)
-
-
 
 ### INDEXING
 # column index
@@ -58,7 +67,6 @@ TF = ['False','True']
 TF_INDEX = {'False':0,'True':1}
 for name in TF:
     print(f"{name} maps to {TF_INDEX[name]}")
-
 
 ## MAPPING
 def map_values(df, column_name, mapping):
@@ -88,8 +96,11 @@ for column_name in ['Country', 'Citizenship Status', 'Continent', 'Degree Type',
 # add these to reference-able indexes
 CITIZENSHIP_INDEX = {v: k for k, v in mappings['Citizenship Status'].items()}
 CONTINENT_INDEX = {v: k for k, v in mappings['Continent'].items()}
+COUNTRY_INDEX = {v: k for k, v in mappings['Country'].items()}
 TYPE_INDEX = {v: k for k, v in mappings['Degree Type'].items()}
 SEMESTER_INDEX = {v: k for k, v in mappings['Entry Semester'].items()}
+
+
 
 ### NUMPY
 # i'm not going to keep the full query around anymore
@@ -105,8 +116,6 @@ SES_arr = SES_clean.to_numpy()
 
 
 ### DATA DEFINITIONS + TRAINING
-from sklearn.model_selection import train_test_split
-
 def RF_creator(qarray):
   y_all = qarray[:,0]  # y = labels
   X_all = qarray[:,1:15] # X = features
@@ -118,16 +127,16 @@ def RF_creator(qarray):
 
   X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size=0.2, random_state=42)
   print(f"training with {len(y_train)} rows;  testing with {len(y_test)} rows" )
-  return X_train, X_test, y_train, y_test
+  return X_all, X_train, X_test, y_all, y_train, y_test
 
-CISAT_X_train, CISAT_X_test, CISAT_y_train, CISAT_y_test = RF_creator(CISAT_arr)
-DBOS_X_train, DBOS_X_test, DBOS_y_train, DBOS_y_test = RF_creator(DBOS_arr)
-DPE_X_train, DPE_X_test, DPE_y_train, DPE_y_test = RF_creator(DPE_arr)
-DSM_X_train, DSM_X_test, DSM_y_train, DSM_y_test = RF_creator(DSM_arr)
-IMS_X_train, IMS_X_test, IMS_y_train, IMS_y_test = RF_creator(IMS_arr)
-SAH_X_train, SAH_X_test, SAH_y_train, SAH_y_test = RF_creator(SAH_arr)
-SCGH_X_train, SCGH_X_test, SCGH_y_train, SCGH_y_test = RF_creator(SCGH_arr)
-SES_X_train, SES_X_test, SES_y_train, SES_y_test = RF_creator(SES_arr)
+CISAT_X_all, CISAT_X_train, CISAT_X_test, CISAT_y_all, CISAT_y_train, CISAT_y_test = RF_creator(CISAT_arr)
+DBOS_X_all, DBOS_X_train, DBOS_X_test, DBOS_y_all, DBOS_y_train, DBOS_y_test = RF_creator(DBOS_arr)
+DPE_X_all, DPE_X_train, DPE_X_test, DPE_y_all, DPE_y_train, DPE_y_test = RF_creator(DPE_arr)
+DSM_X_all, DSM_X_train, DSM_X_test, DSM_y_all, DSM_y_train, DSM_y_test = RF_creator(DSM_arr)
+IMS_X_all, IMS_X_train, IMS_X_test, IMS_y_all, IMS_y_train, IMS_y_test = RF_creator(IMS_arr)
+SAH_X_all, SAH_X_train, SAH_X_test, SAH_y_all, SAH_y_train, SAH_y_test = RF_creator(SAH_arr)
+SCGH_X_all, SCGH_X_train, SCGH_X_test, SCGH_y_all, SCGH_y_train, SCGH_y_test = RF_creator(SCGH_arr)
+SES_X_all, SES_X_train, SES_X_test, SES_y_all, SES_y_train, SES_y_test = RF_creator(SES_arr)
 
 CISAT_list = [CISAT_X_train, CISAT_X_test, CISAT_y_train, CISAT_y_test]
 DBOS_list = [DBOS_X_train, DBOS_X_test, DBOS_y_train, DBOS_y_test]
@@ -141,14 +150,11 @@ SES_list = [SES_X_train, SES_X_test, SES_y_train, SES_y_test]
 
 
 ### FIRST RF MODEL
-from sklearn import tree      # for decision trees
-from sklearn import ensemble  # for random forests, an ensemble classifier
-
 best_d = 1            # a guess
 best_num_trees = 42   # a guess
 rforest_model = ensemble.RandomForestClassifier(max_depth=best_d,
                                                 n_estimators=best_num_trees,
-                                                max_samples=0.5) 
+                                                max_samples=0.5)
 
 def RF_training(df_list):
   rforest_model.fit(df_list[0], df_list[1])
@@ -168,9 +174,6 @@ SES_rforest_model = RF_training([SES_X_train, SES_y_train])
 
 ### CROSS-VALIDATION
 DIVISIONS = ['CISAT','DBOS','DPE','DSM','IMS','SAH','SCGH','SES']
-
-from sklearn.model_selection import KFold
-from sklearn.metrics import accuracy_score
 
 def RF_cross_validation(div, rforest_model, X_train, y_train, dep, tree):
   best_d = 1
@@ -195,7 +198,7 @@ def RF_cross_validation(div, rforest_model, X_train, y_train, dep, tree):
               accuracy_sum += accuracy_score(y_test_fold, y_pred)
 
           average_cv_accuracy = accuracy_sum / kf.get_n_splits()
-          print(f"depth: {d:2d} ntrees: {ntrees:3d} cv accuracy: {average_cv_accuracy:7.4f}")
+          # print(f"depth: {d:2d} ntrees: {ntrees:3d} cv accuracy: {average_cv_accuracy:7.4f}")
           if average_cv_accuracy > best_accuracy:
               best_accuracy = average_cv_accuracy
               best_d = d
@@ -220,14 +223,13 @@ SCGH_best_d, SCGH_best_ntrees, SCGH_best_accuracy = RF_cross_validation(6, SCGH_
 SES_best_d, SES_best_ntrees, SES_best_accuracy = RF_cross_validation(7, SES_rforest_model, SES_X_train, SES_y_train, depth, trees)
 
 
-
 ### TUNED MODEL
 CISAT_model = ensemble.RandomForestClassifier(max_depth=CISAT_best_d,n_estimators=CISAT_best_ntrees,max_samples=0.5)
-CISAT_model.fit(CISAT_X_all, CISAT_y_all) 
+CISAT_model.fit(CISAT_X_all, CISAT_y_all)
 print(f"Built an RF classifier for CISAT with depth={CISAT_best_d} and ntrees={CISAT_best_ntrees}")
 
 DBOS_model = ensemble.RandomForestClassifier(max_depth=DBOS_best_d,n_estimators=DBOS_best_ntrees,max_samples=0.5)
-DBOS_model.fit(DBOS_X_all, DBOS_y_all) 
+DBOS_model.fit(DBOS_X_all, DBOS_y_all)
 print(f"Built an RF classifier for DBOS with depth={DBOS_best_d} and ntrees={DBOS_best_ntrees}")
 
 DPE_model = ensemble.RandomForestClassifier(max_depth=DPE_best_d,n_estimators=DPE_best_ntrees,max_samples=0.5)
@@ -275,17 +277,17 @@ for IMP in IMP_LIST:
     j += 1
 
 DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
-new_list = []
+feature_list = []
 
 for item in DIVISIONS:
   new_var = item + "_features"
-  new_list.append(new_var)
+  feature_list.append(new_var)
 
-print(new_list)
+print(feature_list)
 
 j = 0
-for IMP in IMP_LIST: 
-    print(f"\n{new_list[j]}") # sense check
+for IMP in IMP_LIST:
+    print(f"\n{feature_list[j]}") # sense check
 
     new_df = pd.DataFrame(columns=['Feature Index #', 'Feature', 'Importance %']) # create an empty DataFrame
 
@@ -293,8 +295,8 @@ for IMP in IMP_LIST:
         new_df.loc[len(new_df)] = [i+1, COLUMNS[i+1], importance*100]
 
     new_df.to_csv(f'{DIVISIONS[j]}_features.csv', index=False) # export
-    new_list[j] = new_df # store as a variable
-    print(new_list[j])
+    feature_list[j] = new_df # store as a variable
+    print(feature_list[j])
 
     j+=1
     new_df = pd.DataFrame()
@@ -303,17 +305,15 @@ for IMP in IMP_LIST:
 
 ### COUNTING
 
+## Admitted Students
 # some handy lists to start
 clean_list = [CISAT_clean, DBOS_clean, DPE_clean, DSM_clean, IMS_clean, SAH_clean, SCGH_clean, SES_clean]
 columns = ['Country', 'Citizenship Status', 'Continent', 'Degree Type', 'Entry Semester']
 indexes = [COUNTRY_INDEX, CITIZENSHIP_INDEX, CONTINENT_INDEX, TYPE_INDEX, SEMESTER_INDEX]
 DIVISIONS = ['CISAT', 'DBOS', 'DPE', 'DSM', 'IMS', 'SAH', 'SCGH', 'SES']
-
-from collections import Counter
+     
 
 # define a function to find the top 3 most common values
-from collections import Counter
-
 def find_counts(df, column, index):
     counts = Counter(df[column])
 
@@ -331,10 +331,10 @@ def count_df(df,division):
     count_df = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
     for column, index in zip(columns, indexes):
         top = find_counts(df, column, index)
-        if top: 
+        if top:
           for item in top.items():
             count_df.loc[len(count_df)] = [division, column, item[0], item[1]]
-    count_df.to_csv(f'{division}_counts.csv', index=False) # export
+    count_df.to_csv(f'{division}_counts_all.csv', index=False) # export
     count_df.info()
     return count_df
 
@@ -342,39 +342,42 @@ def count_df(df,division):
 for df, division in zip(clean_list,DIVISIONS):
     count_df(df, division)
 
+## Enrolled Students
+# new dataframes to only include enrolled students
+CISAT_enrolled = CISAT_clean[CISAT_clean['Enrolled'] == 1].copy()
+DBOS_enrolled = DBOS_clean[DBOS_clean['Enrolled'] == 1].copy()
+DPE_enrolled = DPE_clean[DPE_clean['Enrolled'] == 1].copy()
+DSM_enrolled = DSM_clean[DSM_clean['Enrolled'] == 1].copy()
+IMS_enrolled = IMS_clean[IMS_clean['Enrolled'] == 1].copy()
+SAH_enrolled = SAH_clean[SAH_clean['Enrolled'] == 1].copy()
+SCGH_enrolled = SCGH_clean[SCGH_clean['Enrolled'] == 1].copy()
+SES_enrolled = SES_clean[SES_clean['Enrolled'] == 1].copy()
+
+enrolled_list = [CISAT_enrolled, DBOS_enrolled, DPE_enrolled, DSM_enrolled, IMS_enrolled, SAH_enrolled, SCGH_enrolled, SES_enrolled]
+
+def count_df2(df, division):
+    count_df2 = pd.DataFrame(columns=['Division', 'Feature', 'Value', 'Count'])
+    for column, index in zip(columns, indexes):
+        top = find_counts(df, column, index)
+        if top:
+            for item in top.items():
+                count_df2.loc[len(count_df2)] = [division, column, item[0], item[1]]
+    count_df2.to_csv(f'{division}_counts_enrolled.csv', index=False) # export
+    count_df2.info()
+    return count_df2
+
+for df, division in zip(enrolled_list, DIVISIONS):
+    count_df2(df, division)
 
 
 ### VISUALIZING
-import matplotlib.pyplot as plt
 
-CISAT_features = pd.read_csv('CISAT_features.csv')
-CISAT_counts = pd.read_csv('CISAT_counts.csv')
-
-DBOS_features = pd.read_csv('DBOS_features.csv')
-DBOS_counts = pd.read_csv('DBOS_counts.csv')
-
-DPE_features = pd.read_csv('DPE_features.csv')
-DPE_counts = pd.read_csv('DPE_counts.csv')
-
-DSM_features = pd.read_csv('DSM_features.csv')
-DSM_counts = pd.read_csv('DSM_counts.csv')
-
-IMS_features = pd.read_csv('IMS_features.csv')
-IMS_counts = pd.read_csv('IMS_counts.csv')
-
-SCGH_features = pd.read_csv('SCGH_features.csv')
-SCGH_counts = pd.read_csv('SCGH_counts.csv')
-
-SES_features = pd.read_csv('SES_features.csv')
-SES_counts = pd.read_csv('SES_counts.csv')
-
-feature_list = [CISAT_features, DBOS_features, DPE_features, DSM_features, IMS_features, SCGH_features, SES_features]
-count_list = [CISAT_counts, DBOS_counts, DPE_counts, DSM_counts, IMS_counts, SCGH_counts, SES_counts]
-
+## feature importances for ALL divisions (column chart)
 # I didn't end up analyzing Degree 1 for this visual
 for df in feature_list:
-    df.drop(df[df['Feature'] == 'Degree 1'].index, inplace=True) 
+    df.drop(df[df['Feature'] == 'Degree 1'].index, inplace=True)
 
+# using CISAT arbitrarily since the feature list index will be the same across dfs
 feature_index=CISAT_features['Feature']
 
 CISAT=dict(zip(CISAT_features['Feature'],CISAT_features['Importance %']))
@@ -382,18 +385,48 @@ DBOS=dict(zip(DBOS_features['Feature'],DBOS_features['Importance %']))
 DPE=dict(zip(DPE_features['Feature'],DPE_features['Importance %']))
 DSM=dict(zip(DSM_features['Feature'],DSM_features['Importance %']))
 IMS=dict(zip(IMS_features['Feature'],IMS_features['Importance %']))
+SAH=dict(zip(SAH_features['Feature'],SAH_features['Importance %']))
 SCGH=dict(zip(SCGH_features['Feature'],SCGH_features['Importance %']))
 SES=dict(zip(SES_features['Feature'],SES_features['Importance %']))
 
 featureplot = pd.DataFrame({'CISAT': CISAT, 'DBOS':DBOS, 'DPE':DPE, 'DSM':DSM,
-                      'IMS':IMS, 'SCGH':SCGH, 'SES':SES}, index=feature_index)
+                      'IMS':IMS, 'SAH':SAH, 'SCGH':SCGH, 'SES':SES}, index=feature_index)
 
-colordef = plt.cm.rainbow(np.linspace(0, 1, 7))
+# setting a rainbow color scheme
+colordef = plt.cm.rainbow(np.linspace(0, 1, 8))
 
+# create the plot
 featureplot.plot.bar(figsize=(16, 6),color=colordef ,width=0.8)
 
+# title, legend, and axes
 plt.title("Feature Importances")
 plt.legend(title="Divisions")
 plt.ylabel("Importance %")
+
+# export and show the plot
 plt.savefig('feature_importances.png',bbox_inches='tight')
 plt.show()
+
+
+## feature importances for each division (pie chart)
+def pie_chart(df, division):
+    labels = df['Feature']
+    sizes = df['Importance %']
+
+    # Define a custom color palette
+    colors = cm.rainbow([x / len(labels) for x in range(len(labels))])
+
+    # plot display  
+    plt.figure(figsize=(20, 10))
+    plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=140, colors=colors)
+    plt.axis('equal')
+    plt.title(f'Feature Importance for {division}', weight='bold', pad=20)
+    plt.legend(loc='upper left', bbox_to_anchor=(0.85, 1))
+
+    # exporting and viewing
+    plt.savefig(f'{division}_pie_chart.png')
+    plt.show()
+
+# now do it for all the divisions
+for df, division in zip(feature_list, DIVISIONS):
+    pie_chart(df, division)
